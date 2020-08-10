@@ -169,21 +169,14 @@ void performOperation(char *address, char instruction, CacheLine **Cache)
 		// Iterate through Cache[setInt][i] to find the value
 		for (int i = 0; i < linesPerSet; i++)
 		{
-			//first check if valid bit is off
-			if ((Cache[setInt][i]).validBit == 0)
+			//printf("%d\t",(Cache[setInt][i]).validBit);
+			//if valid bit is on and found in Cache
+			if (((Cache[setInt][i]).validBit == 1) && ((Cache[setInt][i]).bitsOfTag == tagInt))
 			{
-				continue;
-			}
-			else
-			{
-				//if found in Cache
-				if ((Cache[setInt][i]).bitsOfTag == tagInt)
-				{
-					cacheHit++;
-					//increment the operation number
-					operationNumber++;
-					return;
-				}
+				cacheHit++;
+				//increment the operation number
+				operationNumber++;
+				return;
 			}
 		}
 
@@ -198,7 +191,7 @@ void performOperation(char *address, char instruction, CacheLine **Cache)
 				cacheMiss++;
 				memoryRead++;
 				(Cache[setInt][i]).validBit = 1;
-				(Cache[setInt][i]).bitsOfTag = tagBits;
+				(Cache[setInt][i]).bitsOfTag = tagInt;
 				(Cache[setInt][i]).iteration = operationNumber;
 				operationNumber++;
 				return;
@@ -214,6 +207,7 @@ void performOperation(char *address, char instruction, CacheLine **Cache)
 			//if operation occurred earlier
 			if ((Cache[setInt][i]).iteration < oldestOnCache)
 			{
+				//printf("here\n");
 				oldestOnCache = (Cache[setInt][i]).iteration;
 				indexOfOldest = i;
 			}
@@ -222,7 +216,7 @@ void performOperation(char *address, char instruction, CacheLine **Cache)
 		if (indexOfOldest != -1)
 		{
 			//after finding the oldest, replace with new value
-			(Cache[setInt][indexOfOldest]).bitsOfTag = tagBits;
+			(Cache[setInt][indexOfOldest]).bitsOfTag = tagInt;
 			(Cache[setInt][indexOfOldest]).iteration = operationNumber;
 			cacheMiss++;
 			memoryRead++;
@@ -236,21 +230,14 @@ void performOperation(char *address, char instruction, CacheLine **Cache)
 		// Iterate through Cache[setInt][i] to find the value
 		for (int i = 0; i < linesPerSet; i++)
 		{
-			//first check if valid bit is off
-			if ((Cache[setInt][i]).validBit == 0)
+
+			//if valid bit is on and found in Cache
+			if (((Cache[setInt][i]).validBit == 1) && ((Cache[setInt][i]).bitsOfTag == tagInt))
 			{
-				continue;
-			}
-			else
-			{
-				//if found in Cache
-				if ((Cache[setInt][i]).bitsOfTag == tagInt)
-				{
-					cacheHit++;
-					memoryWrite++;
-					operationNumber++;
-					return;
-				}
+				cacheHit++;
+				memoryWrite++;
+				operationNumber++;
+				return;
 			}
 		}
 
@@ -266,7 +253,7 @@ void performOperation(char *address, char instruction, CacheLine **Cache)
 				memoryRead++;
 				memoryWrite++;
 				(Cache[setInt][i]).validBit = 1;
-				(Cache[setInt][i]).bitsOfTag = tagBits;
+				(Cache[setInt][i]).bitsOfTag = tagInt;
 				(Cache[setInt][i]).iteration = operationNumber;
 				operationNumber++;
 				return;
@@ -290,7 +277,7 @@ void performOperation(char *address, char instruction, CacheLine **Cache)
 		if (indexOfOldest != -1)
 		{
 			//after finding the oldest, replace with new value
-			(Cache[setInt][indexOfOldest]).bitsOfTag = tagBits;
+			(Cache[setInt][indexOfOldest]).bitsOfTag = tagInt;
 			(Cache[setInt][indexOfOldest]).iteration = operationNumber;
 			cacheMiss++;
 			memoryRead++;
@@ -320,6 +307,7 @@ void initializeCache(CacheLine **Cache, int x, int y)
 		for (int j = 0; j < y; j++)
 		{
 			(Cache[i][j]).validBit = 0;
+			(Cache[i][j]).bitsOfTag = 0;
 		}
 	}
 }
@@ -331,15 +319,22 @@ void printCache(CacheLine **Cache, int x, int y)
 	{
 		for (int j = 0; j < y; j++)
 		{
-			printf("%s%d%s%d\t", "Valid Bit: ", (Cache[i][j]).validBit, "Tag bits: ", (Cache[i][j]).bitsOfTag );
+			printf("%s%d%s%d\t", "Valid Bit: ", (Cache[i][j]).validBit, "Tag bits: ", (Cache[i][j]).bitsOfTag);
 		}
 		printf("\n");
 	}
+	printf("\n");
+
 }
 
 //returns 1 if not power of 2 otherwise returns 0
 int notPowerOf2(int num)
 {
+
+	//edge case when equal input is 2^0
+	if (num == 1) {
+		return 0;
+	}
 
 	//iterate till you get 1 or 0
 	while (num > 1)
@@ -467,11 +462,13 @@ int main(int argc, char **argv)
 					if (strcmp(accessType, "R") == 0)
 					{
 						performOperation(memoryAddress, 'R', Cache);
+
 					}
 					else
 					{
 
 						performOperation(memoryAddress, 'W', Cache);
+
 					}
 				}
 			}
